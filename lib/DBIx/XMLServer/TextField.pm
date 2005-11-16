@@ -1,4 +1,4 @@
-# $Id: TextField.pm,v 1.2 2003/11/03 21:54:08 mjb47 Exp $
+# $Id: TextField.pm,v 1.5 2005/05/26 15:01:04 mjb47 Exp $
 
 package DBIx::XMLServer::TextField;
 use XML::LibXML;
@@ -51,6 +51,12 @@ If the condition is empty, then the SQL expression is
 
   <field> IS NOT NULL .
 
+=item Condition: C<!>
+
+If the condition is the single character '!', then the SQL expression is
+
+  <field> IS NULL .
+
 =back
 
 =cut
@@ -59,6 +65,8 @@ sub where {
   my $self = shift;
   my $cond = shift;
   my $column = $self->select;
+  return "$column IS NOT NULL" if $cond eq '';
+  return "$column IS NULL" if $cond eq '!';
   for ($cond) {
     s/^=// && do {
       $_ = $self->{XMLServer}->{dbh}->quote($_);
@@ -68,7 +76,7 @@ sub where {
     };
     s/^~// && return "$column RLIKE " . $self->{XMLServer}->{dbh}->quote($_);
     /^$/ && return "$column IS NOT NULL";
-    die "Unrecognised condition: $_";
+    die "Unrecognised condition: $_\n";
   }
 }
 
@@ -86,7 +94,7 @@ Martin Bright E<lt>martin@boojum.org.ukE<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 Martin Bright
+Copyright (C) 2003-4 Martin Bright
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

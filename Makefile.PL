@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.3 2003/11/16 17:36:15 mjb47 Exp $
+# $Id: Makefile.PL,v 1.4 2004/07/23 05:27:50 mjb47 Exp $
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
@@ -7,10 +7,8 @@ WriteMakefile(
     'VERSION_FROM'	=> 'XMLServer.pm', # finds $VERSION
     'PREREQ_PM'		=> { XML::LibXML => 1.54,
                              XML::LibXSLT => 1.53,
-			     Parse::RecDescent => 1.90,
                            }, # e.g., Module::Name => 1.1
     'PL_FILES'          => { 
-       'BuildParser.PL' => '$(INST_LIB)/DBIx/XMLServer/XPathParser.pm',
        'AskDatabase.PL' => 't/dbname'
     },
     clean => { FILES => 't/dbname' },

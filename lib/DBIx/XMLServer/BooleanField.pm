@@ -1,4 +1,4 @@
-# $Id: BooleanField.pm,v 1.2 2003/11/03 21:54:08 mjb47 Exp $
+# $Id: BooleanField.pm,v 1.5 2005/05/26 15:01:03 mjb47 Exp $
 
 package DBIx::XMLServer::BooleanField;
 use XML::LibXML;
@@ -20,6 +20,7 @@ from the base class.
 
 The condition must either be empty, or be equal to one of the following:
 
+  !
   =1
   =y
   =yes
@@ -29,9 +30,15 @@ The condition must either be empty, or be equal to one of the following:
   =no
   =false .
 
-An empty condition is equivalent to '=1'.
+If the condition is empty, then the SQL expression is
 
-The SQL expression returned is equal to
+  <field> IS NOT NULL .
+
+If the condition is the character '!', then the SQL expression is
+
+  <field> IS NULL .
+
+Otherwise, the SQL expression returned is equal to
 
   <field> = 'Y'  or  <field> = 'N'
 
@@ -43,11 +50,13 @@ sub where {
   my $self = shift;
   my $cond = shift;
   my $column = $self->select;
+  return "$column IS NOT NULL" if $cond eq '';
+  return "$column IS NULL" if $cond eq '!';
   $cond or return "$column = 'Y'";
-  $cond =~ s/^=// or die "Unrecognised condition: $cond";
+  $cond =~ s/^=// or die "Unrecognised Boolean condition: $cond";
   $cond =~ /^(1|y(es)?|true)$/i && return "$column = 'Y'";
   $cond =~ /^(0|n(o)?|false)$/i && return "$column = 'N'";
-  die "Unrecognised Boolean condition: $_";
+  die "Unrecognised Boolean condition: $cond";
 }
 
 =head2 B<value> method
@@ -78,7 +87,7 @@ Martin Bright E<lt>martin@boojum.org.ukE<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 Martin Bright
+Copyright (C) 2003-4 Martin Bright
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

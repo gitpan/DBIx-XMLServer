@@ -1,3 +1,70 @@
+# $Id: test-utils.pl,v 1.4 2005/10/05 20:39:34 mjb47 Exp $
+
+our $write_files;
+our $debug;
+
+sub get_db {
+  $write_files = !!$ENV{DBIX_TEST_WRITE};
+  $debug = !!$ENV{DBIX_TEST_DEBUG};
+
+  ok(open(FILE, '<t/dbname'), "Finding out which database to use")
+    or diag "Couldn't open configuration file `dbname': $!.\nThis "
+      . "file should have been created by `make'.";
+
+  our ($db, $user, $pass) = split /,/, <FILE>;
+  chomp $pass;
+}
+
+sub open_db {
+  use_ok('DBI');
+  my $dbh = DBI->connect($db, $user || undef, $pass || undef, 
+	{ RaiseError => 0, PrintError => 0 });
+  ok($dbh, "Opening database") or diag $DBI::errstr;
+  my $foo = $DBI::errstr; # Avoid warning
+  return $dbh;
+}
+
+sub close_db {
+}
+
+sub try_query {
+  my $doc;
+  my ($xml_server, $q, $f, %args) = @_;
+  $args{query} = $q;
+  eval { $doc = $xml_server->process(%args) };
+  ok(!$@, "Execute query '$q'") or diag $@;
+  SKIP: {
+    isa_ok($doc, 'XML::LibXML::Document')
+      or do {
+        diag $doc;
+        skip "Query didn't return a document", 2;
+      };
+
+    do {
+      $doc->toFile($f, 1);
+      skip "Writing $f", 2;
+    } if $write_files;
+    
+    ok(my $cmp = new XMLCompare($doc, $f), 
+       "Create XMLCompare object for file $f");
+    my $msg = $cmp->compare;
+    ok(!$msg, "Check results of query '$q'") or do {
+      diag $msg;
+      $doc->toFile($f . '.d') if $debug;
+    }
+  }
+};
+
+sub try_error {
+  my $error;
+  my ($xml_server, $q, $re, %args) = @_;
+  $args{query} = $q;
+  eval { $error = $xml_server->process(%args) };
+  ok(!$@, "Execute query '$q'") or diag $@;
+  ok(!ref($error), "Query '$q' correctly returned an error");
+  like($error, $re, "Query '$q' returned correct error message");
+}
+
 package XMLCompare;
 
 use XML::LibXML;
@@ -15,7 +82,9 @@ sub new {
   return $self;
 }
 
-sub qname { return '{' . $_[0]->namespaceURI . '}' . $_[0]->localname; }
+sub qname { 
+  return '{' . ($_[0]->namespaceURI || ''). '}' . $_[0]->localname; 
+}
 
 sub qname_cmp { qname($a) cmp qname($b) }
 
@@ -77,7 +146,7 @@ sub compare {
     if($b->isa('XML::LibXML::Text')) {
       my $av = $a->data;
       my $bv = $b->data;
-      return "Expected: <<\n$bdata\>>  but found <<\n$adata\n>>"
+      return "Expected: <<\n$bdata\n>>  but found <<\n$adata\n>>"
 	unless $av eq $bv;
       return undef;
     } elsif($b->isa('XML::LibXML::Element')) {

@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- $Id: xmlout.xsl,v 1.3 2003/11/03 21:54:08 mjb47 Exp $ -->
+<!-- $Id: xmlout.xsl,v 1.5 2005/10/05 20:39:34 mjb47 Exp $ -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   version="1.0"
-  xmlns:sql="http://boojum.org.uk/NS/XMLServer">
+  xmlns:sql="http://boojum.org.uk/NS/XMLServer"
+  exclude-result-prefixes="sql">
 
   <xsl:output method="xml"/>
   <xsl:strip-space elements="*"/>
+
+  <xsl:param name="args"/>
+  <xsl:param name="page"/>
+  <xsl:param name="query"/>
+  <xsl:param name="pagesize"/>
+  <xsl:param name="rows"/>
 
   <!-- Cut out the sql:template element -->
   <xsl:template match="sql:template">
@@ -14,6 +21,31 @@
 
   <!-- Remove the template record entirely -->
   <xsl:template match="sql:record"/>
+
+  <!-- Process various meta-information -->
+  <xsl:template match="sql:meta[@attribute]">
+    <xsl:attribute name="{@attribute}" namespace="{@namespace}">
+      <xsl:apply-templates select="." mode="meta"/>
+    </xsl:attribute>
+  </xsl:template>
+  <xsl:template match="sql:meta[not(@attribute)]">
+    <xsl:apply-templates select="." mode="meta"/>
+  </xsl:template>
+  <xsl:template match="sql:meta[@type='args']" mode="meta">
+    <xsl:value-of select="$args"/>
+  </xsl:template>
+  <xsl:template match="sql:meta[@type='page']" mode="meta">
+    <xsl:value-of select="$page"/>
+  </xsl:template>
+  <xsl:template match="sql:meta[@type='pagesize']" mode="meta">
+    <xsl:value-of select="$pagesize"/>
+  </xsl:template>
+  <xsl:template match="sql:meta[@type='query']" mode="meta">
+    <xsl:value-of select="$query"/>
+  </xsl:template>
+  <xsl:template match="sql:meta[@type='rows']" mode="meta">
+    <xsl:value-of select="$rows"/>
+  </xsl:template>
 
   <!-- Remove elements with a <sql:null type='omit'> child -->
   <xsl:template match="*[sql:null/@type='omit']"/>

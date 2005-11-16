@@ -127,7 +127,7 @@ Martin Bright E<lt>martin@boojum.org.ukE<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 Martin Bright
+Copyright (C) 2003-4 Martin Bright
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

@@ -1,4 +1,4 @@
-# $Id: DateField.pm,v 1.2 2003/11/03 21:54:08 mjb47 Exp $
+# $Id: DateField.pm,v 1.5 2005/10/05 20:39:34 mjb47 Exp $
 
 package DBIx::XMLServer::DateField;
 use XML::LibXML;
@@ -23,9 +23,18 @@ To use this field type, you must have the C<Date::Manip> package installed.
 
   $sql_expression = $date_field->where($condition);
 
-The condition consists of one of the comparison operators '=', '<', '>',
+The condition may consist of one of the comparison operators '=', '<', '>',
 '>=' or '<=' followed by a date.  The date may be in any format understood
 by the C<Date::Manip> package, such as '1976-02-28' or 'two months ago'.
+
+Alternatively, the condition may be empty, in which case the SQL expression
+is
+
+  <field> IS NOT NULL .
+
+If the condition is the character '!', then the SQL expression is
+
+  <field> IS NULL .
 
 =cut
 
@@ -33,9 +42,12 @@ sub where {
   my $self = shift;
   my $cond = shift;
   my $column = $self->select;
+  return "$column IS NOT NULL" if $cond eq '';
+  return "$column IS NULL" if $cond eq '!';
   my ($comp, $date) = ($cond =~ /([=<>]+)(.*)/);
-  $comp =~ /^(=|[<>]=?)$/ or die "Unrecognised date comparison: $comp";
-  my $date1 = UnixDate($date, '%Q') or die "Unrecognised date: $date";
+  defined $comp or die "Unrecognised date condition: $cond\n";
+  $comp =~ /^(=|[<>]=?)$/ or die "Unrecognised date comparison: $comp\n";
+  my $date1 = UnixDate($date, '%Q') or die "Unrecognised date: $date\n";
   return "$column $comp " . $date1;
 }
 
@@ -67,7 +79,7 @@ Martin Bright E<lt>martin@boojum.org.ukE<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 Martin Bright
+Copyright (C) 2003-4 Martin Bright
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
